@@ -55,14 +55,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish AnimeJS APK v1.4
-        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish AnimeJS APK v1.4')
+      - name: Publish AnimeJS APK v1.5
+        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish AnimeJS APK v1.5')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.4
-          name: AnimeJS Android App v1.4
+          tag_name: v1.5
+          name: AnimeJS Android App v1.5
           body: |
-            Enables hardware acceleration for Anime.js scroll-synchronized transforms and 3D/canvas animations.
-            Keeps WebView rendering aligned with modern Chromium browser behavior.
+            Opens Anime.js in the device's default browser instead of WebView.
+            This avoids stale scroll-animation frames observed in the embedded WebView and matches normal browser rendering.
           files: app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
