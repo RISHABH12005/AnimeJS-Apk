@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
                     detail: RenderProcessGoneDetail
                 ): Boolean {
                     // Recover from a crashed WebView renderer rather than leaving a blank screen.
+                    (view.parent as? android.view.ViewGroup)?.removeView(view)
                     view.destroy()
                     recreateWebView(root)
                     return true
