@@ -55,13 +55,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish AnimeJS APK v1.1
-        if: github.event_name == 'push' && github.event.head_commit.message == 'Fix AnimeJS WebView and add launcher logo'
+      - name: Publish AnimeJS APK v1.2
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Fix AnimeJS mobile rendering overlap'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1
-          name: AnimeJS Android App v1.1
+          tag_name: v1.2
+          name: AnimeJS Android App v1.2
           body: |
-            Fixes mobile WebView rendering and adds a dedicated AnimeJS launcher icon.
+            Fixes mobile WebView rendering artifacts and preserves Anime.js responsive animation behavior.
+            Includes the Anime.js launcher icon.
           files: app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
