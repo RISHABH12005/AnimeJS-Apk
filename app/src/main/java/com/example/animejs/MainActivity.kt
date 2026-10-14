@@ -16,7 +16,6 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +47,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
         setContent {
             AnimeJSTheme {
@@ -114,7 +112,8 @@ private fun AnimeJsWebView(
                 WebView(context).apply {
                     currentWebView = this
                     onWebViewCreated(this)
-                    setBackgroundColor(android.graphics.Color.rgb(244, 241, 239))
+                    setBackgroundColor(android.graphics.Color.WHITE)
+                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
                     overScrollMode = View.OVER_SCROLL_NEVER
 
                     settings.apply {
