@@ -55,14 +55,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish AnimeJS APK v1.2
-        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish AnimeJS APK v1.2')
+      - name: Publish AnimeJS APK v1.3
+        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish AnimeJS APK v1.3')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2
-          name: AnimeJS Android App v1.2
+          tag_name: v1.3
+          name: AnimeJS Android App v1.3
           body: |
-            Fixes mobile WebView rendering artifacts and preserves Anime.js responsive animation behavior.
-            Includes the Anime.js launcher icon.
+            Experimental rendering workaround for scroll-animation ghosting on some Android WebView devices.
+            Uses software rendering for the WebView to force repaint of animated frames.
           files: app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
