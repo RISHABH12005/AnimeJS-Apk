@@ -1,5 +1,6 @@
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+from urllib.request import Request, urlopen
+from PIL import Image, ImageDraw
 
 ROOT = Path("app/src/main/res")
 SIZES = {
@@ -9,61 +10,43 @@ SIZES = {
     "mipmap-xxhdpi": 144,
     "mipmap-xxxhdpi": 192,
 }
-BG = (17, 18, 22, 255)
-FG = (248, 247, 246, 255)
-ACCENT = (244, 79, 101, 255)
+LOGO_URL = "https://animejs.com/assets/images/favicon.png"
+TEMP_LOGO = Path("/tmp/animejs-favicon.png")
 
-def make_icon(size: int) -> Image.Image:
-    scale = size / 432
-    image = Image.new("RGBA", (size, size), BG)
-    draw = ImageDraw.Draw(image)
-    # Strong, simple lowercase "a" mark with Anime.js's coral accent.
-    candidates = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
-    ]
-    font_path = next((p for p in candidates if Path(p).exists()), None)
-    font = ImageFont.truetype(font_path, max(1, int(270 * scale))) if font_path else ImageFont.load_default()
-    bbox = draw.textbbox((0, 0), "a", font=font)
-    text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    x = (size - text_w) / 2 - bbox[0] - 5 * scale
-    y = (size - text_h) / 2 - bbox[1] - 7 * scale
-    draw.text((x, y), "a", font=font, fill=FG, stroke_width=0)
-    # Small coral square echoes the site's red accent and remains visible at launcher size.
-    accent = max(2, int(42 * scale))
-    left = int(size * 0.67)
-    top = int(size * 0.18)
-    draw.rounded_rectangle(
-        (left, top, left + accent, top + accent),
-        radius=max(1, int(4 * scale)),
-        fill=ACCENT
-    )
-    return image
+# Fetch the site's actual Anime.js logo mark rather than drawing a substitute.
+request = Request(LOGO_URL, headers={"User-Agent": "Mozilla/5.0"})
+with urlopen(request, timeout=30) as response:
+    TEMP_LOGO.write_bytes(response.read())
 
+source = Image.open(TEMP_LOGO).convert("RGBA")
+side = max(source.width, source.height)
+canvas = Image.new("RGBA", (side, side), (255, 255, 255, 255))
+source.thumbnail((int(side * 0.84), int(side * 0.84)), Image.Resampling.LANCZOS)
+canvas.alpha_composite(source, ((side - source.width) // 2, (side - source.height) // 2))
+
+# Density-specific launcher icons.
 for folder_name, size in SIZES.items():
     folder = ROOT / folder_name
     folder.mkdir(parents=True, exist_ok=True)
-    icon = make_icon(size)
+    icon = canvas.resize((size, size), Image.Resampling.LANCZOS)
     icon.save(folder / "ic_launcher.webp", "WEBP", quality=96, method=6)
     icon.save(folder / "ic_launcher_round.webp", "WEBP", quality=96, method=6)
 
-# Transparent foreground asset for Android adaptive icons.
+# Adaptive icon foreground keeps the official mark centered within Android's safe zone.
 foreground_dir = ROOT / "drawable"
 foreground_dir.mkdir(parents=True, exist_ok=True)
-size = 432
-fg = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-draw = ImageDraw.Draw(fg)
-candidates = [
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
-]
-font_path = next((p for p in candidates if Path(p).exists()), None)
-font = ImageFont.truetype(font_path, 270) if font_path else ImageFont.load_default()
-bbox = draw.textbbox((0, 0), "a", font=font)
-tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-draw.text(((size - tw) / 2 - bbox[0] - 5, (size - th) / 2 - bbox[1] - 7), "a", font=font, fill=FG)
-draw.rounded_rectangle((290, 76, 332, 118), radius=4, fill=ACCENT)
+fg = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
+mark = canvas.resize((360, 360), Image.Resampling.LANCZOS)
+fg.alpha_composite(mark, ((432 - 360) // 2, (432 - 360) // 2))
 fg.save(foreground_dir / "animejs_icon_foreground.png", optimize=True)
+
+# Monochrome version for Android themed icons.
+mono = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
+mark_l = mark.convert("L")
+white_mark = Image.new("RGBA", mark.size, (255, 255, 255, 0))
+white_mark.putalpha(mark_l)
+mono.alpha_composite(white_mark, ((432 - 360) // 2, (432 - 360) // 2))
+mono.save(foreground_dir / "animejs_icon_monochrome.png", optimize=True)
 
 adaptive_dir = ROOT / "mipmap-anydpi-v26"
 adaptive_dir.mkdir(parents=True, exist_ok=True)
@@ -76,17 +59,15 @@ xml = '''<?xml version="1.0" encoding="utf-8"?>
 '''
 (adaptive_dir / "ic_launcher.xml").write_text(xml, encoding="utf-8")
 (adaptive_dir / "ic_launcher_round.xml").write_text(xml, encoding="utf-8")
-# Monochrome adaptive icon: same mark in white without the coral accent.
-mono = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
-mono_draw = ImageDraw.Draw(mono)
-mono_bbox = mono_draw.textbbox((0, 0), "a", font=font)
-mtw, mth = mono_bbox[2] - mono_bbox[0], mono_bbox[3] - mono_bbox[1]
-mono_draw.text(((432 - mtw) / 2 - mono_bbox[0] - 5, (432 - mth) / 2 - mono_bbox[1] - 7), "a", font=font, fill=(255, 255, 255, 255))
-mono.save(foreground_dir / "animejs_icon_monochrome.png", optimize=True)
+
 values_dir = ROOT / "values"
 values_dir.mkdir(parents=True, exist_ok=True)
-(values_dir / "animejs_icon_background.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
+(values_dir / "animejs_icon_background.xml").write_text(
+    '''<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="animejs_icon_background">#111216</color>
+    <color name="animejs_icon_background">#FFFFFF</color>
 </resources>
-''', encoding="utf-8")
+''',
+    encoding="utf-8",
+)
+print(f"Generated Anime.js launcher icons from {LOGO_URL}")
