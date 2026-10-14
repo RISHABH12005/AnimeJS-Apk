@@ -1,6 +1,6 @@
 from pathlib import Path
 from urllib.request import Request, urlopen
-from PIL import Image, ImageDraw
+from PIL import Image
 
 ROOT = Path("app/src/main/res")
 SIZES = {
