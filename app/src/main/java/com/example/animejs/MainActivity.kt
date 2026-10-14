@@ -115,14 +115,18 @@ private fun AnimeJsWebView(
                     currentWebView = this
                     onWebViewCreated(this)
                     setBackgroundColor(android.graphics.Color.rgb(244, 241, 239))
+                    overScrollMode = View.OVER_SCROLL_NEVER
 
                     settings.apply {
-                        javaScriptEnabled = true // Required for Anime.js examples and controls.
+                        javaScriptEnabled = true
                         domStorageEnabled = true
+                        databaseEnabled = true
                         loadsImagesAutomatically = true
                         cacheMode = WebSettings.LOAD_DEFAULT
                         useWideViewPort = true
-                        loadWithOverviewMode = true
+                        loadWithOverviewMode = false
+                        textZoom = 100
+                        layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
                         builtInZoomControls = false
                         displayZoomControls = false
                         allowFileAccess = false
@@ -130,18 +134,34 @@ private fun AnimeJsWebView(
                         javaScriptCanOpenWindowsAutomatically = false
                         setSupportMultipleWindows(false)
                         mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                        mediaPlaybackRequiresUserGesture = true
                     }
 
                     webViewClient = object : WebViewClient() {
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             isLoading = true
                             hasError = false
-                            canGoBack = view?.canGoBack() == true
+                            progress = 0
                         }
 
                         override fun onPageFinished(view: WebView?, url: String?) {
                             isLoading = false
+                            progress = 100
                             canGoBack = view?.canGoBack() == true
+
+                            // Trigger a responsive-layout recalculation after the initial WebView paint.
+                            // This helps pages that initially calculate dimensions before Android's viewport settles.
+                            view?.evaluateJavascript(
+                                """
+                                (() => {
+                                  document.documentElement.style.webkitTextSizeAdjust = '100%';
+                                  window.dispatchEvent(new Event('resize'));
+                                  requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+                                  return true;
+                                })();
+                                """.trimIndent(),
+                                null
+                            )
                         }
 
                         override fun onReceivedError(
@@ -159,7 +179,7 @@ private fun AnimeJsWebView(
                             view: WebView?,
                             request: WebResourceRequest?
                         ): Boolean {
-                            val uri = request?.url ?: return false
+                            val uri: Uri = request?.url ?: return false
                             val host = uri.host.orEmpty().lowercase()
                             val isAnimeJs = host == "animejs.com" || host.endsWith(".animejs.com")
 
