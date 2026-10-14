@@ -1,0 +1,67 @@
+name: Build AnimeJS Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "tools/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install icon tooling
+        run: python -m pip install --disable-pip-version-check Pillow
+
+      - name: Generate AnimeJS launcher icons
+        run: python tools/generate_launcher_icon.py
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnimeJS-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish AnimeJS APK v1.1
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Fix AnimeJS WebView and add launcher logo'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.1
+          name: AnimeJS Android App v1.1
+          body: |
+            Fixes mobile WebView rendering and adds a dedicated AnimeJS launcher icon.
+          files: app/build/outputs/apk/debug/app-debug.apk
+          make_latest: true
