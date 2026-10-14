@@ -118,6 +118,7 @@ private fun AnimeJsWebView(
                     overScrollMode = View.OVER_SCROLL_NEVER
 
                     settings.apply {
+                        // Keep the layout viewport aligned with the real phone viewport.
                         javaScriptEnabled = true
                         domStorageEnabled = true
                         databaseEnabled = true
