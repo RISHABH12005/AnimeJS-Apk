@@ -113,10 +113,9 @@ private fun AnimeJsWebView(
                     currentWebView = this
                     onWebViewCreated(this)
                     setBackgroundColor(android.graphics.Color.WHITE)
-                    // Work around stale GPU-composited frames seen on some phones while the
-                    // Anime.js page runs scroll-synchronized transforms. Software rendering is
-                    // slower, but it forces the WebView to repaint the current animation frame.
-                    setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                    // Anime.js uses GPU-backed transforms and 3D/canvas animation. Keep the
+                    // WebView on Android's hardware-accelerated compositor, like a modern browser.
+                    setLayerType(View.LAYER_TYPE_NONE, null)
                     overScrollMode = View.OVER_SCROLL_NEVER
 
                     settings.apply {
