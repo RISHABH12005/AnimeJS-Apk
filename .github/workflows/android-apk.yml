@@ -20,16 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -48,21 +48,22 @@ jobs:
           ./gradlew --no-daemon assembleDebug
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: AnimeJS-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish AnimeJS APK v1.5
-        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish AnimeJS APK v1.5')
+      - name: Publish AnimeJS APK v1.6
+        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Publish AnimeJS APK v1.6')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.5
-          name: AnimeJS Android App v1.5
+          tag_name: v1.6
+          name: AnimeJS Android App v1.6
           body: |
-            Opens Anime.js in the device's default browser instead of WebView.
-            This avoids stale scroll-animation frames observed in the embedded WebView and matches normal browser rendering.
+            Keeps Anime.js inside the Android app using WebView.
+            Enables cached-resource loading when offline and shows an in-app retry screen if the page is unavailable.
+            Offline availability depends on resources having been cached during an earlier online visit.
           files: app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
