@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -113,7 +112,8 @@ private fun AnimeJsWebView(
                     currentWebView = this
                     onWebViewCreated(this)
                     setBackgroundColor(android.graphics.Color.WHITE)
-                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                    // Let Android WebView manage its own compositing layer. Forcing a hardware
+                    // layer can leave animated page content visually duplicated on some devices.
                     overScrollMode = View.OVER_SCROLL_NEVER
 
                     settings.apply {
@@ -149,17 +149,11 @@ private fun AnimeJsWebView(
                             progress = 100
                             canGoBack = view?.canGoBack() == true
 
-                            // Trigger a responsive-layout recalculation after the initial WebView paint.
-                            // This helps pages that initially calculate dimensions before Android's viewport settles.
+                            // Preserve the site's own responsive and animation lifecycle.
+                            // Synthetic resize events here can restart layout/animation sequences
+                            // and produce overlapping text on mobile WebView.
                             view?.evaluateJavascript(
-                                """
-                                (() => {
-                                  document.documentElement.style.webkitTextSizeAdjust = '100%';
-                                  window.dispatchEvent(new Event('resize'));
-                                  requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
-                                  return true;
-                                })();
-                                """.trimIndent(),
+                                "document.documentElement.style.webkitTextSizeAdjust = '100%';",
                                 null
                             )
                         }
